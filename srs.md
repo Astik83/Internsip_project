@@ -1,19 +1,14 @@
 
-# Visitor Management and Gate Pass Automation System – Backend System Design (Revised)
-
-This design aligns with the provided requirements, including the simplified Gate Pass Generation component shown in the UI mockup.
-
----
 
 ## 1. Problem Understanding
 
 ### Purpose
-Automate visitor registration, gate pass generation, entry/exit tracking, and reporting. The system eliminates paper logs, provides a digital pass with configurable duration and visual timer, and streamlines security operations.
+Automate visitor registration, gate pass generation, entry/exit tracking, and reporting. Replace manual logs with a digital pass that includes a configurable duration, a countdown timer, and template selection, streamlining security operations.
 
 ### Target Users & Their Goals
-- **Receptionist** – Manually register visitors, set gate pass duration, select template, and print passes.
-- **Security Officer** – Search visitors, view status, record check‑in/out.
-- **Administrator** – Configure system settings, manage user roles, export reports.
+- **Receptionist** – Manually register visitors, generate unique visitor IDs.
+- **Security Officer** – Search visitors, generate gate passes (set duration, choose template), record check‑in/out, view status.
+- **Administrator** – Manage system configuration, user roles, view reports, export data.
 - **System Administrator** – Full system control, audit logs.
 
 ---
@@ -22,13 +17,13 @@ Automate visitor registration, gate pass generation, entry/exit tracking, and re
 
 | Module | Features |
 |--------|----------|
-| Visitor Registration | Manual form with name, company, reason, contact, email; unique visitor ID generation. |
-| Gate Pass Generation | Display visitor info (name, company, ID, date/time), duration selector (hours), template selection (Standard / Premium), countdown timer, print button. |
-| Entry/Exit Tracking | Security officer records check‑in and check‑out; automatic timestamp and status update. |
-| Visitor Search & Display | Search by name or ID; table with status color coding; detailed view. |
-| Reporting & Export | Dashboard with visitor counts (daily/weekly/monthly); CSV export. |
-| Role Management | Define roles (Receptionist, Security Officer, Administrator, System Admin). |
-| Configuration | System defaults: default duration, email notification recipient, expiry handling. |
+| **Visitor Registration** | Manual form with name, company, reason, contact, email; unique visitor ID generation. |
+| **Gate Pass Generation** | Display visitor info (name, company, ID, date/time), duration selector (hours), template selection (Standard / Premium), countdown timer, print button. |
+| **Entry/Exit Tracking** | Security officer records check‑in and check‑out; automatic timestamp and status update. |
+| **Visitor Search & Display** | Search by name or ID; paginated table with status color coding; detailed view. |
+| **Reporting & Export** | Dashboard with visitor counts (daily/weekly/monthly); CSV export. |
+| **Role Management** | Define roles (Receptionist, Security Officer, Administrator, System Admin). |
+| **Configuration** | System defaults: default duration, email notification recipient, expiry handling. |
 
 ---
 
@@ -36,101 +31,101 @@ Automate visitor registration, gate pass generation, entry/exit tracking, and re
 
 | Role | Responsibilities |
 |------|------------------|
-| Receptionist | Register visitors; generate and print gate passes (set duration, choose template). |
-| Security Officer | Search visitors; record check‑in/out; view visitor status. |
-| Administrator | Manage users, configure system settings, export data, view reports. |
-| System Administrator | Full access, audit logs, user account management. |
+| **Receptionist** | Register visitors (only). |
+| **Security Officer** | Search visitors; generate gate passes (set duration, choose template); record check‑in/out; view visitor status. |
+| **Administrator** | Manage users, configure system settings, export data, view reports. |
+| **System Administrator** | Full access, audit logs, user account management. |
 
 ---
 
 ## 4. Entity Identification
 
-- **Visitor**
-  - `visitor_id` (PK) – auto‑generated unique ID
-  - `name`
-  - `company`
-  - `reason_for_visit` (predefined list)
-  - `contact_number`
-  - `email`
-  - `notes` (optional)
-  - `created_at`
+### Visitor
+- `visitor_id` (PK) – auto‑generated unique ID (e.g., VIS-YYYYMMDD-XXXX)
+- `name`
+- `company`
+- `reason_for_visit` (predefined list)
+- `contact_number`
+- `email`
+- `notes` (optional)
+- `created_at`
 
-- **Visit**
-  - `visit_id` (PK)
-  - `visitor_id` (FK)
-  - `status` (Checked In, Checked Out, Expired)
-  - `entry_time` (timestamp)
-  - `exit_time` (timestamp, nullable)
-  - `gate_pass_duration_hours` (selected by receptionist)
-  - `gate_pass_issued_at` (timestamp)
-  - `gate_pass_valid_until` (timestamp = issued_at + duration hours)
-  - `template_type` (Standard / Premium) – stored for audit, but printing handled frontend
+### Visit
+- `visit_id` (PK)
+- `visitor_id` (FK)
+- `status` (Checked In, Checked Out, Expired)
+- `entry_time` (timestamp)
+- `exit_time` (timestamp, nullable)
+- `gate_pass_duration_hours` (selected by security officer at check‑in)
+- `gate_pass_issued_at` (timestamp)
+- `gate_pass_valid_until` (timestamp = issued_at + duration hours)
+- `template_type` (Standard / Premium)
 
-- **GatePass** (optional – can be derived from Visit; kept separate for tracking prints)
-  - `pass_id` (PK)
-  - `visit_id` (FK, one‑to‑one)
-  - `printed_at` (timestamp)
-  - `printed_by` (FK to user)
+### GatePass (optional – to log print actions)
+- `pass_id` (PK)
+- `visit_id` (FK, one‑to‑one)
+- `printed_at` (timestamp)
+- `printed_by` (FK to user)
 
-- **User**
-  - `user_id` (PK)
-  - `username`
-  - `password_hash`
-  - `role` (Receptionist, Security Officer, Administrator, System Admin)
-  - `is_active`
+### User
+- `user_id` (PK)
+- `username`
+- `password_hash`
+- `role` (Receptionist, Security Officer, Administrator, System Admin)
+- `is_active`
 
-- **AuditLog**
-  - `log_id` (PK)
-  - `user_id` (FK)
-  - `action`
-  - `entity_type`
-  - `entity_id`
-  - `timestamp`
-  - `details` (JSON)
+### AuditLog
+- `log_id` (PK)
+- `user_id` (FK)
+- `action`
+- `entity_type`
+- `entity_id`
+- `timestamp`
+- `details` (JSON)
 
-- **Configuration**
-  - `config_id` (PK)
-  - `config_key` (unique)
-  - `config_value`
+### Configuration
+- `config_id` (PK)
+- `config_key` (unique)
+- `config_value`
 
 ---
 
 ## 5. Relationships
-
-- `Visitor` ↔ `Visit` – one‑to‑many.
-- `Visit` ↔ `GatePass` – one‑to‑one (optional).
-- `User` ↔ `AuditLog` – one‑to‑many.
+- **Visitor ↔ Visit** – one‑to‑many.
+- **Visit ↔ GatePass** – one‑to‑one (optional).
+- **User ↔ AuditLog** – one‑to‑many.
 
 ---
 
 ## 6. Business Rules & Constraints
 
-### 1. Visitor Registration
-- Required fields: name, company, reason, contact, email.
-- Contact number and email must be valid formats.
-- Visitor ID is system‑generated (e.g., `VIS-YYYYMMDD-XXXX`).
+1. **Visitor Registration**
+   - Required fields: name, company, reason, contact, email.
+   - Contact number and email must be valid formats.
+   - Visitor ID is system‑generated, unique, and consistent format.
 
-### 2. Gate Pass Generation
-- Pass can only be generated after visitor registration.
-- Duration can be set by receptionist (in hours).
-- Pass validity is computed as current time + duration.
-- Template selection is stored (Standard / Premium) but printing is frontend‑driven.
-- Printed pass includes visitor name, company, ID, date/time, and remaining time (calculated).
+2. **Gate Pass Generation**
+   - Pass is generated only by a Security Officer at the time of check‑in.
+   - Duration is set by the officer (in hours, e.g., 1–24).
+   - Pass validity is computed as current time + duration.
+   - Template selection (Standard / Premium) is stored for audit.
+   - Printed pass includes visitor name, company, ID, date/time, and remaining time (calculated client‑side).
 
-### 3. Entry/Exit
-- Check‑in records `entry_time` and status → “Checked In”.
-- Check‑out records `exit_time` and status → “Checked Out”.
-- If pass expires before check‑out, status becomes “Expired” (batch job or on‑demand).
-- A checked‑in visitor cannot be checked in again without checking out first.
+3. **Entry/Exit**
+   - Check‑in creates a Visit record with entry_time = NOW(), status = Checked In.
+   - Check‑out updates exit_time and status = Checked Out.
+   - A visitor cannot have two active visits (status Checked In or Expired without check‑out) simultaneously.
+   - If a pass expires before check‑out, status becomes Expired (via scheduled job).
 
-### 4. Roles & Permissions
-- Only Receptionists can generate/print passes.
-- Security Officers can check in/out.
-- Administrators can view reports and export data.
+4. **Roles & Permissions**
+   - Receptionist: only `POST /visitors`.
+   - Security Officer: `GET /visitors` (with search), `GET /visitors/{id}`, `POST /visits`, `PUT /visits/{visitId}/checkout`, `POST /visits/{visitId}/print`.
+   - Administrator: `GET /reports/*`, `GET/PUT /config`, CRUD `/users`.
+   - System Administrator: full access.
 
-### 5. Expiry
-- After validity period, gate pass is considered expired; the system prevents check‑in.
-- A scheduled job updates status of expired visits daily.
+5. **Expiry**
+   - A scheduled job runs periodically (e.g., every 5 minutes) to set status to Expired for any Checked In visit where `valid_until < NOW()`.
+   - During check‑in attempt, the system also ensures that no active visit exists (already covered by duplicate rule).
 
 ---
 
@@ -154,9 +149,9 @@ Automate visitor registration, gate pass generation, entry/exit tracking, and re
 | Column | Type | Constraints |
 |--------|------|-------------|
 | `visit_id` | BIGINT | PK AUTO_INCREMENT |
-| `visitor_id` | VARCHAR(20) | FK → `visitors(visitor_id)` |
+| `visitor_id` | VARCHAR(20) | FK → visitors(visitor_id) |
 | `status` | ENUM('Checked In','Checked Out','Expired') | NOT NULL |
-| `entry_time` | TIMESTAMP | NULL |
+| `entry_time` | TIMESTAMP | NOT NULL |
 | `exit_time` | TIMESTAMP | NULL |
 | `gate_pass_duration_hours` | INT | NOT NULL |
 | `gate_pass_issued_at` | TIMESTAMP | NOT NULL |
@@ -168,9 +163,9 @@ Automate visitor registration, gate pass generation, entry/exit tracking, and re
 | Column | Type | Constraints |
 |--------|------|-------------|
 | `pass_id` | BIGINT | PK AUTO_INCREMENT |
-| `visit_id` | BIGINT | FK → `visits(visit_id)`, UNIQUE |
+| `visit_id` | BIGINT | FK → visits(visit_id) UNIQUE |
 | `printed_at` | TIMESTAMP | NOT NULL |
-| `printed_by` | BIGINT | FK → `users(user_id)` |
+| `printed_by` | BIGINT | FK → users(user_id) |
 
 ### `users`
 
@@ -187,7 +182,7 @@ Automate visitor registration, gate pass generation, entry/exit tracking, and re
 | Column | Type | Constraints |
 |--------|------|-------------|
 | `log_id` | BIGINT | PK AUTO_INCREMENT |
-| `user_id` | BIGINT | FK → `users(user_id)` |
+| `user_id` | BIGINT | FK → users(user_id) |
 | `action` | VARCHAR(100) | NOT NULL |
 | `entity_type` | VARCHAR(50) | NOT NULL |
 | `entity_id` | VARCHAR(100) | NOT NULL |
@@ -205,102 +200,306 @@ Automate visitor registration, gate pass generation, entry/exit tracking, and re
 
 ---
 
-## 8. Workflow / Process Flow
+## 8. JPA Repository Methods with Native Queries
 
-### Gate Pass Generation
-1. Receptionist registers a visitor → Visitor record created.
-2. Receptionist selects Gate Pass Generation component.
-3. System fetches visitor details (name, company, visitor ID) and current timestamp.
-4. Receptionist sets duration (hours) and selects template (Standard/Premium).
-5. System calculates `valid_until = now + duration`.
-6. Creates a Visit record with status `'Active'` (pass generated but not yet checked in).
-7. System stores `gate_pass_duration_hours`, `gate_pass_issued_at`, `gate_pass_valid_until`, and `template_type` in `visits` table.
-8. Optional: log print in `gate_passes` table.
-9. Frontend displays the countdown timer based on `valid_until` and provides a print button.
+### VisitorRepository
 
-### Check‑in
-1. Visitor arrives with printed pass (or security officer looks up by name/ID).
-2. Security officer finds visitor record, clicks “Check In”.
-3. System updates `visit.entry_time = NOW()`, `status = 'Checked In'`.
-4. Audit log records action.
+```java
+public interface VisitorRepository extends JpaRepository<Visitor, String> {
 
-### Check‑out
-1. Visitor leaves; security officer selects “Check Out”.
-2. System updates `exit_time` and `status = 'Checked Out'`.
+    // Find all visitors with pagination and optional search (name or ID)
+    @Query(value = "SELECT v.visitor_id, v.name, v.company, " +
+                   "COALESCE(vs.status, 'Pending') as status " +
+                   "FROM visitors v " +
+                   "LEFT JOIN ( " +
+                   "    SELECT visitor_id, status, " +
+                   "           ROW_NUMBER() OVER (PARTITION BY visitor_id ORDER BY visit_id DESC) as rn " +
+                   "    FROM visits " +
+                   ") vs ON v.visitor_id = vs.visitor_id AND vs.rn = 1 " +
+                   "WHERE (:search IS NULL OR v.visitor_id LIKE CONCAT('%', :search, '%') " +
+                   "       OR v.name LIKE CONCAT('%', :search, '%')) " +
+                   "ORDER BY v.name ASC " +
+                   "LIMIT :limit OFFSET :offset",
+           countQuery = "SELECT COUNT(*) FROM visitors v " +
+                        "WHERE (:search IS NULL OR v.visitor_id LIKE CONCAT('%', :search, '%') " +
+                        "       OR v.name LIKE CONCAT('%', :search, '%'))",
+           nativeQuery = true)
+    Page<Object[]> findVisitorsWithStatus(@Param("search") String search,
+                                          @Param("limit") int limit,
+                                          @Param("offset") int offset,
+                                          Pageable pageable);
 
-### Expiry Handling
-- A scheduled job runs daily to find visits where `valid_until < NOW()` and `status` is `'Active'` or `'Checked In'`; set status to `'Expired'`.
-- During check‑in, system also checks if `valid_until` is in the past; if yes, reject with “Pass expired”.
+    // Get visitor details with current visit
+    @Query(value = "SELECT v.visitor_id, v.name, v.company, v.reason_for_visit, " +
+                   "v.contact_number, v.email, v.notes, v.created_at, " +
+                   "vs.visit_id, vs.status, vs.entry_time, vs.exit_time, " +
+                   "vs.gate_pass_valid_until, vs.gate_pass_duration_hours, vs.template_type " +
+                   "FROM visitors v " +
+                   "LEFT JOIN visits vs ON v.visitor_id = vs.visitor_id " +
+                   "AND vs.visit_id = (SELECT visit_id FROM visits WHERE visitor_id = v.visitor_id " +
+                   "                   ORDER BY visit_id DESC LIMIT 1) " +
+                   "WHERE v.visitor_id = :visitorId",
+           nativeQuery = true)
+    Optional<Object[]> findVisitorDetail(@Param("visitorId") String visitorId);
 
-### Reporting
-- Administrator selects date range; backend queries visits with filters.
-- Returns counts and optionally detailed data for CSV export.
+    // Autocomplete suggestions (name or ID)
+    @Query(value = "SELECT visitor_id, name FROM visitors " +
+                   "WHERE visitor_id LIKE CONCAT(:q, '%') OR name LIKE CONCAT(:q, '%') " +
+                   "LIMIT 10", nativeQuery = true)
+    List<Object[]> findSuggestions(@Param("q") String q);
+}
+```
+
+### VisitRepository
+
+```java
+public interface VisitRepository extends JpaRepository<Visit, Long> {
+
+    // Check if a visitor has an active visit (Checked In or Expired without check-out)
+    @Query(value = "SELECT COUNT(*) FROM visits " +
+                   "WHERE visitor_id = :visitorId " +
+                   "AND status IN ('Checked In', 'Expired')",
+           nativeQuery = true)
+    int countActiveVisitsByVisitorId(@Param("visitorId") String visitorId);
+
+    // Get the latest visit for a visitor (for status display)
+    @Query(value = "SELECT * FROM visits WHERE visitor_id = :visitorId " +
+                   "ORDER BY visit_id DESC LIMIT 1",
+           nativeQuery = true)
+    Optional<Visit> findLatestByVisitorId(@Param("visitorId") String visitorId);
+
+    // Update expired visits
+    @Modifying
+    @Query(value = "UPDATE visits SET status = 'Expired' " +
+                   "WHERE status = 'Checked In' AND gate_pass_valid_until < NOW()",
+           nativeQuery = true)
+    int updateExpiredVisits();
+}
+```
+
+### GatePassRepository
+
+```java
+public interface GatePassRepository extends JpaRepository<GatePass, Long> {
+
+    // Log a print action
+    @Query(value = "INSERT INTO gate_passes (visit_id, printed_at, printed_by) " +
+                   "VALUES (:visitId, NOW(), :userId)",
+           nativeQuery = true)
+    @Modifying
+    int logPrint(@Param("visitId") Long visitId, @Param("userId") Long userId);
+}
+```
+
+### ReportRepository (Custom)
+
+```java
+public interface ReportRepository {
+
+    // Get visitor counts grouped by day/week/month
+    @Query(value = "SELECT DATE(entry_time) as date, COUNT(*) as count " +
+                   "FROM visits " +
+                   "WHERE entry_time BETWEEN :from AND :to " +
+                   "GROUP BY DATE(entry_time) " +
+                   "ORDER BY date",
+           nativeQuery = true)
+    List<Object[]> getDailyVisitorCounts(@Param("from") LocalDateTime from,
+                                          @Param("to") LocalDateTime to);
+
+    // For weekly/monthly grouping, similar queries with DATE_FORMAT
+    @Query(value = "SELECT DATE_FORMAT(entry_time, '%Y-%u') as week, COUNT(*) as count " +
+                   "FROM visits " +
+                   "WHERE entry_time BETWEEN :from AND :to " +
+                   "GROUP BY week " +
+                   "ORDER BY week",
+           nativeQuery = true)
+    List<Object[]> getWeeklyVisitorCounts(@Param("from") LocalDateTime from,
+                                           @Param("to") LocalDateTime to);
+
+    @Query(value = "SELECT DATE_FORMAT(entry_time, '%Y-%m') as month, COUNT(*) as count " +
+                   "FROM visits " +
+                   "WHERE entry_time BETWEEN :from AND :to " +
+                   "GROUP BY month " +
+                   "ORDER BY month",
+           nativeQuery = true)
+    List<Object[]> getMonthlyVisitorCounts(@Param("from") LocalDateTime from,
+                                            @Param("to") LocalDateTime to);
+}
+```
 
 ---
 
-## 9. API Design (High‑Level)
+## 9. Workflow / Process Flow (with API Calls)
+
+### Step 1: Visitor Registration (Receptionist)
+- **API:** `POST /api/v1/visitors`  
+  **Request:**
+  ```json
+  {
+    "name": "John Doe",
+    "company": "Acme Corp",
+    "reasonForVisit": "Business Meeting",
+    "contactNumber": "+1234567890",
+    "email": "john.doe@acme.com",
+    "notes": "Meeting with IT team"
+  }
+  ```
+  **Response (201 Created):**
+  ```json
+  {
+    "visitorId": "VIS-20250325-001",
+    "name": "John Doe",
+    "company": "Acme Corp",
+    "createdAt": "2025-03-25T09:00:00"
+  }
+  ```
+
+### Step 2: Security Officer Searches for Visitor (Initial Table Load)
+- **API:** `GET /api/v1/visitors?page=0&size=10&sort=name,asc`  
+  **Response (200 OK):**
+  ```json
+  {
+    "content": [
+      {
+        "visitorId": "VIS-20250325-001",
+        "name": "John Doe",
+        "company": "Acme Corp",
+        "status": "Pending"
+      },
+      {
+        "visitorId": "VIS-20250325-002",
+        "name": "Jane Smith",
+        "company": "Beta Inc",
+        "status": "Checked In"
+      }
+    ],
+    "pageable": { "pageNumber": 0, "pageSize": 10 },
+    "totalPages": 5,
+    "totalElements": 50
+  }
+  ```
+
+### Step 3: Gate Pass Generation (Check‑in)
+- **API:** `POST /api/v1/visits`  
+  **Request:**
+  ```json
+  {
+    "visitorId": "VIS-20250325-001",
+    "durationHours": 3,
+    "templateType": "Standard"
+  }
+  ```
+  **Response (201 Created):**
+  ```json
+  {
+    "visitId": 101,
+    "visitorId": "VIS-20250325-001",
+    "visitorName": "John Doe",
+    "company": "Acme Corp",
+    "entryTime": "2025-03-25T09:00:00",
+    "validUntil": "2025-03-25T12:00:00",
+    "durationHours": 3,
+    "templateType": "Standard",
+    "status": "Checked In"
+  }
+  ```
+
+### Step 4: Print Gate Pass (Optional Logging)
+- **API:** `POST /api/v1/visits/{visitId}/print`  
+  **Response:**
+  ```json
+  { "message": "Print action logged" }
+  ```
+
+### Step 5: Check‑out
+- **API:** `PUT /api/v1/visits/{visitId}/checkout`  
+  **Response:**
+  ```json
+  {
+    "visitId": 101,
+    "visitorId": "VIS-20250325-001",
+    "visitorName": "John Doe",
+    "company": "Acme Corp",
+    "entryTime": "2025-03-25T09:00:00",
+    "exitTime": "2025-03-25T11:30:00",
+    "validUntil": "2025-03-25T12:00:00",
+    "durationHours": 3,
+    "templateType": "Standard",
+    "status": "Checked Out"
+  }
+  ```
+
+### Step 6: Reporting (Administrator)
+- **API:** `GET /api/v1/reports/visitors?from=2025-03-01&to=2025-03-31&groupBy=day`  
+  **Response:**
+  ```json
+  {
+    "labels": ["2025-03-25", "2025-03-26"],
+    "data": [12, 8]
+  }
+  ```
+- **Export CSV:** `GET /api/v1/reports/export?from=2025-03-01&to=2025-03-31` → CSV file.
+
+---
+
+## 10. API Design (Complete with Examples)
 
 All endpoints under `/api/v1`
 
-| Endpoint | Method | Purpose | Request | Response |
-|----------|--------|---------|---------|----------|
-| `/visitors` | POST | Register visitor | VisitorDTO (name, company, reason, contact, email, notes) | 201 Created with visitor_id |
-| `/visitors/{id}` | GET | Get visitor details | – | VisitorDetailDTO (includes current visit info if any) |
-| `/visitors/search` | GET | Search by name or ID | q query param | List of VisitorSummaryDTO |
-| `/visits` | POST | Generate gate pass | VisitRequestDTO (visitor_id, duration_hours, template_type) | VisitDTO (includes visitor info, valid_until) |
-| `/visits/{visitId}/checkin` | PUT | Record check‑in | – | 200 OK with updated visit |
-| `/visits/{visitId}/checkout` | PUT | Record check‑out | – | 200 OK |
-| `/reports/visitors` | GET | Get visitor counts | from, to, groupBy (day/week/month) | ReportDTO |
-| `/reports/export` | GET | Export CSV | same filters | CSV file |
-| `/config` | GET / PUT | Configuration (PUT) | ConfigDTO | 200 OK |
-| `/users` | CRUD | User management (admin only) | UserDTO | 200/201 |
-
-All responses follow standard wrapper. Error responses include appropriate HTTP status codes.
-
----
-
-## 10. Security & Access Control
-
-- **Authentication**: JWT (stateless).
-- **Authorization**: Role‑based with `@PreAuthorize`.
-  - **Receptionist**: can POST `/visitors`, POST `/visits`, view own registrations.
-  - **Security Officer**: can GET `/visitors/search`, GET `/visitors/{id}`, PUT `/visits/{visitId}/checkin`, PUT `/visits/{visitId}/checkout`.
-  - **Administrator**: can GET `/reports/*`, GET/PUT `/config`, manage users.
-- **Password**: BCrypt hashing.
-- **Validation**: Bean validation on DTOs.
-- **Protection**: CORS, rate limiting, SQL injection prevention via JPA.
+| Endpoint | Method | Purpose | Request Example | Response Example |
+|----------|--------|---------|-----------------|------------------|
+| `/visitors` | POST | Register visitor | `{ "name": "...", "company": "...", "reasonForVisit": "...", "contactNumber": "...", "email": "...", "notes": "..." }` | 201 Created `{ "visitorId": "...", "name": "...", "company": "...", "createdAt": "..." }` |
+| `/visitors` | GET | Paginated list of visitors (optional search) | `?q=John&page=0&size=10&sort=name,asc` | `Page<VisitorSummaryDTO>` |
+| `/visitors/suggest` | GET | Autocomplete suggestions | `?q=John` | `[ { "visitorId": "...", "name": "..." } ]` |
+| `/visitors/{id}` | GET | Full visitor details | – | `VisitorDetailDTO` (includes current visit) |
+| `/visits` | POST | Check‑in & generate pass | `{ "visitorId": "...", "durationHours": 3, "templateType": "Standard" }` | 201 Created `VisitDTO` |
+| `/visits/{visitId}/checkout` | PUT | Check‑out | – | `VisitDTO` with updated status |
+| `/visits/{visitId}/print` | POST | Log print action | – | `{ "message": "Print action logged" }` |
+| `/reports/visitors` | GET | Visitor counts | `?from=...&to=...&groupBy=day/week/month` | `{ "labels": [...], "data": [...] }` |
+| `/reports/export` | GET | CSV export | same filters | CSV file |
+| `/config` | GET / PUT | System configuration | `ConfigDTO` | `ConfigDTO` |
+| `/users` | CRUD | User management (admin) | `UserDTO` | 200/201 |
 
 ---
 
-## 11. Edge Cases & Exception Handling
+## 11. Security & Access Control
+- **Authentication:** JWT (stateless) with refresh token.
+- **Authorization:** Role‑based (RBAC) using Spring Security method‑level annotations (`@PreAuthorize`).
+- **Password:** BCrypt hashing.
+- **Validation:** Bean validation on all DTOs.
+- **Protection:** CORS configured, rate limiting on public endpoints, SQL injection prevented by JPA (native queries use parameter binding).
+
+---
+
+## 12. Edge Cases & Exception Handling
 
 | Scenario | Handling |
 |----------|----------|
-| Visitor already has an active pass | Prevent duplicate active visits; return conflict error. |
-| Check‑in after expiry | Reject; show message “Gate pass expired on [date]”. |
-| Check‑in without gate pass | Not possible – passes are generated for all visitors. |
-| Print failure | Log error; frontend can retry. |
-| Invalid duration | Validate (1–24 hours, default 3). |
-| Search with no results | Return empty list; frontend shows “No visitors found”. |
-| Unauthorized access | 401 Unauthorized. |
+| Visitor already has an active visit | `POST /visits` returns `409 Conflict` with message “Visitor already has an active pass. Please check out first.” |
+| Check‑in with expired pass (if ever attempted) | Not possible because duplicate active check prevents it; the old visit would already be Expired or Checked Out. |
+| Invalid duration (out of range) | `POST /visits` returns `400 Bad Request` with validation error. |
+| Search returns no results | `200 OK` with empty array. |
+| Unauthorized access | `401 Unauthorized`; no extra info. |
+| Database failure | Circuit breaker returns generic error, logs details. |
 
 ---
 
-## 12. Logging & Monitoring
+## 13. Logging & Monitoring
 
 ### Logging
-- All service methods logged via AOP.
-- Audit logs stored in `audit_logs` table.
+- All service method entry/exit via AOP.
+- Audit logs stored in `audit_logs` table (CRUD, check‑in/out, prints).
 - Security events (login failures, permission violations) logged at INFO.
-- Exceptions logged at ERROR.
+- Exceptions logged at ERROR with stack trace.
 
 ### Monitoring
-- Spring Boot Actuator endpoints.
-- Metrics: visitor registrations, gate passes generated, check‑in/out counts.
-- Alerts: high error rate, database connection issues.
+- Spring Boot Actuator endpoints: `health`, `metrics`, circuit breakers.
+- Custom metrics: `visitor_registration_count`, `gate_pass_generated_count`, `checkin_count`, `checkout_count`.
+- Alerts: high error rate (>5%), circuit breaker open, database connection pool issues.
 
 ### Caching
-- Cache visitor search results for 5 minutes.
+- Cache visitor search results for 5 minutes using Spring Cache (Redis or in‑memory).
 
 ---
 
+This design fully supports the gate pass generation UI, provides clear API examples, defines a consistent workflow, and includes all necessary native queries for JPA repositories.
