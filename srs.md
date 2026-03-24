@@ -1,4 +1,4 @@
-```markdown
+
 # Visitor Management and Gate Pass Automation System – Backend System Design (Revised)
 
 This design aligns with the provided requirements, including the simplified Gate Pass Generation component shown in the UI mockup.
@@ -304,5 +304,3 @@ All responses follow standard wrapper. Error responses include appropriate HTTP 
 
 ---
 
-This revised design aligns with the provided gate pass generation UI, simplifies the pass model, and still meets all functional requirements.
-```
