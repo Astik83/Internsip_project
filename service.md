@@ -51,21 +51,40 @@ public VisitorResponseDto registerVisitor(VisitorWithVisitRequestDto dto) {
 @Override
 public VisitResponseDto addVisit(Integer visitorId, VisitRequestDto dto) {
 
+    // 1. Fetch Visitor
     Visitor visitor = visitorRepository.findById(visitorId)
             .orElseThrow(() -> new RuntimeException("Visitor not found"));
 
+    // 2. 🔥 Validation: Visitor should NOT be inside
+    if (visitor.getStatus() == VisitorStatus.CHECKED_IN) {
+        throw new RuntimeException("Visitor already inside, cannot create new visit");
+    }
+
+    // 3. Create new VisitRecord
     VisitRecord visit = new VisitRecord();
 
     visit.setVisitor(visitor);
     visit.setReasonForVisit(dto.getReasonForVisit());
     visit.setVisitNotes(dto.getVisitNotes());
-    visit.setGatePassDuration(dto.getGatePassDuration());
+
+    // Default duration
+    int duration = dto.getGatePassDuration() != null ? dto.getGatePassDuration() : 1;
+    visit.setGatePassDuration(duration);
+
+    // Default template
     visit.setGatePassTemplate(
-        dto.getGatePassTemplate() != null ? dto.getGatePassTemplate() : "Standard"
+            dto.getGatePassTemplate() != null ? dto.getGatePassTemplate() : "Standard"
     );
+
+
 
     visitRecordRepository.save(visit);
 
+    // 4. 🔥 Reset Visitor status for new visit lifecycle
+    visitor.setStatus(VisitorStatus.PENDING);
+    visitorRepository.save(visitor);
+
+    // 5. Return response
     return modelMapper.map(visit, VisitResponseDto.class);
 }
 ```
