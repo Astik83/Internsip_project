@@ -1,68 +1,53 @@
 
 
-```java
-public interface VisitorService {
+## 🔹 1. POST `/visitors`  
+### Register visitor + initial visit  
 
-    VisitorResponseDto registerVisitor(VisitorWithVisitRequestDto dto);
-
-    VisitResponseDto addVisit(Integer visitorId, VisitRequestDto dto);
-
-    List<VisitorResponseDto> getAllVisitors();
-
-    VisitorResponseDto getVisitorById(Integer visitorId);
-
-    VisitorResponseDto updateVisitor(Integer visitorId, VisitorRequestDto dto);
-
-    VisitResponseDto updateVisit(Integer visitorId, Integer recordId, VisitRequestDto dto);
-}
-```
-
----
-
-## 🛠️ 2. Service Implementation
+**Action by:** Receptionist  
+**Status after registration:** `PENDING` (no check‑in)
 
 ```java
-@Service
-public class VisitorServiceImpl implements VisitorService {
-
-    @Autowired
-    private VisitorRepository visitorRepository;
-
-    @Autowired
-    private VisitRecordRepository visitRecordRepository;
-
-    @Autowired
-    private ModelMapper modelMapper;
-
-    // 🔷 1. Register Visitor + First Visit
 @Override
 public VisitorResponseDto registerVisitor(VisitorWithVisitRequestDto dto) {
 
+    // 1. Map visitor
     Visitor visitor = modelMapper.map(dto.getVisitor(), Visitor.class);
 
     visitor.setUniqueId(generateUniqueId());
-    visitor.setStatus(VisitorStatus.PENDING); // ✅ correct
+    visitor.setStatus(VisitorStatus.PENDING);
     visitor.setCreatedAt(LocalDateTime.now());
 
     Visitor savedVisitor = visitorRepository.save(visitor);
 
-    // Create visit WITHOUT check-in
+    // 2. Create initial visit (NO entryTime)
     VisitRecord visit = new VisitRecord();
 
     visit.setVisitor(savedVisitor);
     visit.setReasonForVisit(dto.getVisit().getReasonForVisit());
     visit.setVisitNotes(dto.getVisit().getVisitNotes());
     visit.setGatePassDuration(dto.getVisit().getGatePassDuration());
-    visit.setGatePassTemplate(dto.getVisit().getGatePassTemplate());
-
-
+    visit.setGatePassTemplate(
+        dto.getVisit().getGatePassTemplate() != null ? dto.getVisit().getGatePassTemplate() : "Standard"
+    );
 
     visitRecordRepository.save(visit);
 
+    // 3. Attach visit to response
+    savedVisitor.setVisitRecords(List.of(visit));
+
     return mapToVisitorResponse(savedVisitor);
 }
+```
 
-    // 🔷 2. Add New Visit
+---
+
+## 🔹 2. POST `/visitors/{visitorId}/visits`  
+### Add repeat visit  
+
+**Action by:** Receptionist  
+**Status remains unchanged**
+
+```java
 @Override
 public VisitResponseDto addVisit(Integer visitorId, VisitRequestDto dto) {
 
@@ -75,174 +60,199 @@ public VisitResponseDto addVisit(Integer visitorId, VisitRequestDto dto) {
     visit.setReasonForVisit(dto.getReasonForVisit());
     visit.setVisitNotes(dto.getVisitNotes());
     visit.setGatePassDuration(dto.getGatePassDuration());
-    visit.setGatePassTemplate(dto.getGatePassTemplate());
-
-  
+    visit.setGatePassTemplate(
+        dto.getGatePassTemplate() != null ? dto.getGatePassTemplate() : "Standard"
+    );
 
     visitRecordRepository.save(visit);
 
     return modelMapper.map(visit, VisitResponseDto.class);
 }
+```
 
-    // 🔷 3. Get All Visitors
-    @Override
-    public List<VisitorResponseDto> getAllVisitors() {
+---
 
-        List<Visitor> visitors = visitorRepository.findAll();
+## 🔹 3. GET `/visitors` (Pagination + Filter)  
+### Retrieve visitors with optional status filter and sorting  
 
-        return visitors.stream()
-                .map(this::mapToVisitorResponse)
-                .toList();
+```java
+@Override
+public Page<VisitorResponseDto> getAllVisitors(
+        int page, int limit, String sortBy, String order, String status) {
+
+    Sort sort = order.equalsIgnoreCase("desc") ?
+            Sort.by(sortBy).descending() :
+            Sort.by(sortBy).ascending();
+
+    Pageable pageable = PageRequest.of(page, limit, sort);
+
+    Page<Visitor> visitors;
+
+    if (status != null) {
+        visitors = visitorRepository.findByStatus(VisitorStatus.valueOf(status), pageable);
+    } else {
+        visitors = visitorRepository.findAll(pageable);
     }
 
-    // 🔷 4. Get Visitor by ID
-    @Override
-    public VisitorResponseDto getVisitorById(Integer visitorId) {
+    return visitors.map(visitor -> {
+        VisitorResponseDto dto = mapToVisitorResponse(visitor);
 
-        Visitor visitor = visitorRepository.findById(visitorId)
-                .orElseThrow(() -> new RuntimeException("Visitor not found"));
+        // Optional: attach latest visit only
+        VisitRecord latest = visitRecordRepository
+                .findTopByVisitorOrderByEntryTimeDesc(visitor);
 
-        return mapToVisitorResponse(visitor);
-    }
-
-    // 🔷 5. Update Visitor
-    @Override
-    public VisitorResponseDto updateVisitor(Integer visitorId, VisitorRequestDto dto) {
-
-        Visitor visitor = visitorRepository.findById(visitorId)
-                .orElseThrow(() -> new RuntimeException("Visitor not found"));
-
-        if (dto.getName() != null) visitor.setName(dto.getName());
-        if (dto.getCompany() != null) visitor.setCompany(dto.getCompany());
-        if (dto.getContactNumber() != null) visitor.setContactNumber(dto.getContactNumber());
-        if (dto.getEmail() != null) visitor.setEmail(dto.getEmail());
-        if (dto.getNotes() != null) visitor.setNotes(dto.getNotes());
-
-        visitorRepository.save(visitor);
-
-        return mapToVisitorResponse(visitor);
-    }
-
-    // 🔷 6. Update Visit
-    @Override
-    public VisitResponseDto updateVisit(Integer visitorId, Integer recordId, VisitRequestDto dto) {
-
-        VisitRecord visit = visitRecordRepository.findById(recordId)
-                .orElseThrow(() -> new RuntimeException("Visit not found"));
-
-        if (!visit.getVisitor().getVisitorId().equals(visitorId)) {
-            throw new RuntimeException("Visit does not belong to this visitor");
-        }
-
-        if (dto.getReasonForVisit() != null)
-            visit.setReasonForVisit(dto.getReasonForVisit());
-
-        if (dto.getVisitNotes() != null)
-            visit.setVisitNotes(dto.getVisitNotes());
-
-        if (dto.getGatePassDuration() != null) {
-            visit.setGatePassDuration(dto.getGatePassDuration());
-            visit.setGatePassExpiryTime(
-                    visit.getEntryTime().plusHours(dto.getGatePassDuration())
-            );
-        }
-
-        visitRecordRepository.save(visit);
-
-        return modelMapper.map(visit, VisitResponseDto.class);
-    }
-
-    // 🔷 COMMON METHODS
-
-    private VisitRecord createVisit(VisitRequestDto dto, Visitor visitor) {
-
-        VisitRecord visit = modelMapper.map(dto, VisitRecord.class);
-
-        LocalDateTime entryTime = LocalDateTime.now();
-
-        visit.setVisitor(visitor);
-        visit.setEntryTime(entryTime);
-
-        int duration = dto.getGatePassDuration() != null ? dto.getGatePassDuration() : 1;
-
-        visit.setGatePassDuration(duration);
-        visit.setGatePassExpiryTime(entryTime.plusHours(duration));
-
-        visit.setStatusAtTime("CHECKED_IN");
-
-        return visit;
-    }
-
-    private String generateUniqueId() {
-        return "V" + System.currentTimeMillis(); // simple version
-    }
-
-    private VisitorResponseDto mapToVisitorResponse(Visitor visitor) {
-
-        VisitorResponseDto dto = modelMapper.map(visitor, VisitorResponseDto.class);
-
-        if (visitor.getVisitRecords() != null) {
-            List<VisitResponseDto> visits = visitor.getVisitRecords()
-                    .stream()
-                    .map(v -> modelMapper.map(v, VisitResponseDto.class))
-                    .toList();
-
-            dto.setVisitRecords(visits);
+        if (latest != null) {
+            dto.setVisitRecords(List.of(modelMapper.map(latest, VisitResponseDto.class)));
         }
 
         return dto;
-    }
+    });
 }
 ```
 
 ---
 
-## ✅ 3. Business Logic Covered
+## 🔹 4. GET `/visitors/search?q=`  
+### Search visitors by name or unique ID  
 
-- ✔ Unique ID generation
-- ✔ Visitor status update (PENDING → CHECKED_IN → CHECKED_OUT)
-- ✔ Visit creation with automatic expiry time calculation
-- ✔ Partial updates (null-safe)
-- ✔ Relationship handling between Visitor and VisitRecord
-- ✔ DTO ↔ Entity mapping using ModelMapper
+```java
+@Override
+public List<VisitorSearchDto> searchVisitors(String query) {
+
+    List<Visitor> visitors =
+            visitorRepository.findByNameContainingIgnoreCaseOrUniqueIdContaining(query, query);
+
+    return visitors.stream().map(visitor -> {
+
+        VisitRecord latest = visitRecordRepository
+                .findTopByVisitorOrderByEntryTimeDesc(visitor);
+
+        VisitorSearchDto dto = new VisitorSearchDto();
+
+        dto.setVisitorId(visitor.getVisitorId());
+        dto.setName(visitor.getName());
+        dto.setUniqueId(visitor.getUniqueId());
+        dto.setCompany(visitor.getCompany());
+        dto.setStatus(visitor.getStatus().name());
+
+        if (latest != null) {
+            dto.setLatestVisit(modelMapper.map(latest, VisitResponseDto.class));
+        }
+
+        return dto;
+
+    }).toList();
+}
+```
 
 ---
 
-## 🔥 4. Additional Feature: Check-Out API
+## 🔹 5. GET `/visitors/{visitorId}`  
+### Get detailed visitor information with all visits (sorted descending)  
 
 ```java
-public void checkoutVisitor(Integer recordId) {
+@Override
+public VisitorResponseDto getVisitorById(Integer visitorId) {
+
+    Visitor visitor = visitorRepository.findById(visitorId)
+            .orElseThrow(() -> new RuntimeException("Visitor not found"));
+
+    // Load visits sorted DESC
+    List<VisitRecord> visits =
+            visitRecordRepository.findByVisitorOrderByEntryTimeDesc(visitor);
+
+    visitor.setVisitRecords(visits);
+
+    return mapToVisitorResponse(visitor);
+}
+```
+
+---
+
+## 🔹 6. PUT `/visitors/{visitorId}`  
+### Update permanent visitor information only  
+
+**Action by:** Receptionist (or Admin)  
+**No status or visit data is changed**
+
+```java
+@Override
+public VisitorResponseDto updateVisitor(Integer visitorId, VisitorRequestDto dto) {
+
+    Visitor visitor = visitorRepository.findById(visitorId)
+            .orElseThrow(() -> new RuntimeException("Visitor not found"));
+
+    if (dto.getName() != null) visitor.setName(dto.getName());
+    if (dto.getCompany() != null) visitor.setCompany(dto.getCompany());
+    if (dto.getContactNumber() != null) visitor.setContactNumber(dto.getContactNumber());
+    if (dto.getEmail() != null) visitor.setEmail(dto.getEmail());
+    if (dto.getNotes() != null) visitor.setNotes(dto.getNotes());
+
+    visitorRepository.save(visitor);
+
+    return mapToVisitorResponse(visitor);
+}
+```
+
+---
+
+## 🔹 7. PUT `/visitors/{visitorId}/visits/{recordId}`  
+### Update specific visit details  
+
+**Action by:** Receptionist (or Security)  
+**Only updates allowed fields, no workflow logic**
+
+```java
+@Override
+public VisitResponseDto updateVisit(Integer visitorId, Integer recordId, VisitRequestDto dto) {
 
     VisitRecord visit = visitRecordRepository.findById(recordId)
             .orElseThrow(() -> new RuntimeException("Visit not found"));
 
-    visit.setExitTime(LocalDateTime.now());
+    if (!visit.getVisitor().getVisitorId().equals(visitorId)) {
+        throw new RuntimeException("Visit does not belong to this visitor");
+    }
 
-    Visitor visitor = visit.getVisitor();
-    visitor.setStatus(VisitorStatus.CHECKED_OUT);
+    if (dto.getReasonForVisit() != null)
+        visit.setReasonForVisit(dto.getReasonForVisit());
+
+    if (dto.getVisitNotes() != null)
+        visit.setVisitNotes(dto.getVisitNotes());
+
+    if (dto.getGatePassDuration() != null)
+        visit.setGatePassDuration(dto.getGatePassDuration());
+
+    if (dto.getGatePassTemplate() != null)
+        visit.setGatePassTemplate(dto.getGatePassTemplate());
 
     visitRecordRepository.save(visit);
+
+    return modelMapper.map(visit, VisitResponseDto.class);
 }
 ```
 
 ---
 
-## ⏰ 5. Background Expiry Job
+## 🔥 Important Rules Followed
 
-Automatically expire visits after gate pass duration.
+- ✔ No check‑in logic in these APIs  
+- ✔ No status change except initial `PENDING`  
+- ✔ Visits are created without `entryTime`  
+- ✔ Separation of roles maintained (Receptionist vs Security)  
 
-```java
-@Scheduled(fixedRate = 60000) // runs every minute
-public void expireVisitors() {
+---
 
-    List<VisitRecord> visits =
-            visitRecordRepository.findExpiredVisits(LocalDateTime.now());
+## 🔷 Final Flow (Aligned with Requirement)
 
-    for (VisitRecord visit : visits) {
-        visit.getVisitor().setStatus(VisitorStatus.EXPIRED);
-    }
-}
+```
+POST   /visitors               → create visitor + visit → status = PENDING
+POST   /visitors/{id}/visits   → add visit              → status unchanged
+GET    /visitors               → read only (paginated, filtered)
+GET    /visitors/{id}          → read only (full details)
+PUT    /visitors/{id}          → update permanent info only
+PUT    /visitors/{id}/visits/{recordId} → update visit details only
 ```
 
 ---
+
 
