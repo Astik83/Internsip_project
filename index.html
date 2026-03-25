@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Management System - Complete UI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ========== BASE STYLES (from main UI) ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+            line-height: 1.5;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        /* Role tabs */
+        .role-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+
+        .role-tab {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-tab.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        .role-tab:hover:not(.active) {
+            background: #e2e8f0;
+        }
+
+        /* Panels */
+        .role-panel {
+            display: none;
+        }
+
+        .role-panel.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #334155;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            ring: 2px solid #3b82f6;
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        button.secondary {
+            background: #64748b;
+        }
+
+        button.secondary:hover {
+            background: #475569;
+        }
+
+        button.icon-btn {
+            background: none;
+            color: #475569;
+            padding: 0.25rem 0.5rem;
+        }
+
+        button.icon-btn:hover {
+            background: #f1f5f9;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        /* Status badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-pending { background: #fef9c3; color: #854d0e; }
+        .badge-checked-in { background: #dcfce7; color: #166534; }
+        .badge-checked-out { background: #e2e8f0; color: #334155; }
+        .badge-expired { background: #fee2e2; color: #991b1b; }
+
+        /* Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        /* Search bar */
+        .search-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-bar input {
+            flex: 1;
+        }
+
+        /* Widget */
+        .widget {
+            background: #f1f5f9;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .widget-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            max-width: 500px;
+            width: 90%;
+            padding: 1.5rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        /* Gate Pass specific styles (from separate design) */
+        .gate-pass {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #ddd;
+        }
+        .gate-pass .header {
+            text-align: center;
+            border-bottom: 2px solid #3b82f6;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+        .gate-pass .header h2 {
+            margin: 0;
+            color: #1e3a8a;
+        }
+        .gate-pass .header p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .gate-pass .visitor-id {
+            background: #f3f4f6;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .gate-pass .visitor-id span {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            font-family: monospace;
+        }
+        .gate-pass .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .gate-pass .detail-label {
+            width: 100px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .gate-pass .detail-value {
+            flex: 1;
+            color: #111827;
+        }
+        .gate-pass .status {
+            margin: 15px 0;
+            text-align: center;
+            padding: 8px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .gate-pass .status.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .gate-pass .status.expired {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .gate-pass .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .gate-pass .qr-code img {
+            width: 100px;
+            height: 100px;
+        }
+        .gate-pass .footer {
+            text-align: center;
+            font-size: 10px;
+            color: #9ca3af;
+            margin-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 10px;
+        }
+        .print-btn {
+            display: block;
+            width: 100%;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .print-btn:hover {
+            background: #2563eb;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: 0.25rem;
+            color: #94a3b8;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            background-color: #334155;
+            color: #fff;
+            text-align: center;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 0.75rem;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+        }
+
+        hr {
+            margin: 1rem 0;
+            border: none;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            body { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 style="font-size: 1.8rem;">Visitor Management & Gate Pass Automation</h1>
+    <p style="margin-bottom: 1.5rem; color: #475569;">Role‑based dashboards with integrated gate pass printing</p>
+
+    <div class="role-tabs">
+        <div class="role-tab active" data-role="receptionist">Receptionist</div>
+        <div class="role-tab" data-role="security">Security Officer</div>
+        <div class="role-tab" data-role="admin">System Administrator</div>
+    </div>
+
+    <!-- ===================== Receptionist Panel ===================== -->
+    <div id="receptionist-panel" class="role-panel active">
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fas fa-bolt"></i> Quick Actions</div>
+                        <button id="showRegisterFormBtn"><i class="fas fa-plus"></i> Register New Visitor</button>
+                    </div>
+                    <div class="search-bar">
+                        <input type="text" id="receptionistSearch" placeholder="Search by name or ID...">
+                        <button><i class="fas fa-search"></i> Search</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Today’s Registered Visitors</div>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead><tr><th>Name</th><th>Unique ID</th><th>Status</th></tr></thead>
+                            <tbody id="todayVisitorsList">
+                                <tr><td>John Smith</td><td>V202503250001</td><td><span class="badge badge-pending">Pending</span></td></tr>
+                                <tr><td>Emma Watson</td><td>V202503250002</td><td><span class="badge badge-checked-in">Checked‑In</span></td></tr>
+                                <tr><td>Robert Brown</td><td>V202503250003</td><td><span class="badge badge-expired">Expired</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Visitors Created by You</div>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead><tr><th>Name</th><th>Company</th><th>Unique ID</th><th>Actions</th></tr></thead>
+                            <tbody>
+                                <tr><td>John Smith</td><td>Acme Inc</td><td>V202503250001</td><td><button class="secondary editVisitorBtn" data-id="1">Edit</button> <button class="secondary addVisitBtn" data-id="1">+ Visit</button></td></tr>
+                                <tr><td>Emma Watson</td><td>Tech Corp</td><td>V202503250002</td><td><button class="secondary editVisitorBtn" data-id="2">Edit</button> <button class="secondary addVisitBtn" data-id="2">+ Visit</button></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <!-- Registration Form (hidden initially) -->
+                <div class="card" id="registerFormCard" style="display: none;">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fas fa-address-card"></i> Register New Visitor</div>
+                        <button id="closeRegisterForm" class="icon-btn"><i class="fas fa-times"></i></button>
+                    </div>
+                    <form id="registerForm">
+                        <div class="form-group"><label>Full Name *</label><input type="text" id="regName" required></div>
+                        <div class="form-group"><label>Company *</label><input type="text" id="regCompany" required></div>
+                        <div class="form-group"><label>Contact Number *</label><input type="tel" id="regPhone" required></div>
+                        <div class="form-group"><label>Email *</label><input type="email" id="regEmail" required></div>
+                        <div class="form-group"><label>General Notes (optional)</label><textarea id="regNotes" rows="2"></textarea></div>
+                        <hr>
+                        <div class="form-group">
+                            <label>Reason for Visit *</label>
+                            <select id="regReason" required>
+                                <option>Business Meeting</option><option>Client Visit</option><option>Interview</option><option>Delivery</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Visit Notes (optional)</label><textarea id="regVisitNotes" rows="2"></textarea></div>
+                        <div class="form-group">
+                            <label>Gate Pass Duration <span class="tooltip">ⓘ<span class="tooltip-text">Duration set by receptionist. Admin configures default options.</span></span></label>
+                            <select id="regDuration">
+                                <option>1 hour</option><option>2 hours</option><option>4 hours</option><option>8 hours</option>
+                            </select>
+                        </div>
+                        <button type="submit">Register Visitor</button>
+                    </form>
+                    <div id="generatedUniqueId" style="margin-top: 1rem; font-weight: 500; display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== Security Officer Panel ===================== -->
+    <div id="security-panel" class="role-panel">
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <div class="card-title"><i class="fas fa-search"></i> Search Visitor</div>
+                    <div class="search-bar">
+                        <input type="text" id="securitySearch" placeholder="Name or Unique ID..." list="visitorSuggestions">
+                        <datalist id="visitorSuggestions">
+                            <option>John Smith (V202503250001)</option>
+                            <option>Emma Watson (V202503250002)</option>
+                        </datalist>
+                        <button id="searchBtn"><i class="fas fa-search"></i> Search</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Live Dashboard</div>
+                    <div class="grid-3">
+                        <div class="widget"><div class="widget-number" id="premisesCount">1</div><div>On Premises</div></div>
+                        <div class="widget"><div class="widget-number">3</div><div>Check‑ins Today</div></div>
+                        <div class="widget"><div class="widget-number">2</div><div>Pending</div></div>
+                    </div>
+                    <div><strong>Recent Check‑ins:</strong></div>
+                    <ul style="margin-top: 0.5rem; list-style: none;">
+                        <li><i class="fas fa-sign-in-alt"></i> Emma Watson - 10:30 AM</li>
+                        <li><i class="fas fa-sign-in-alt"></i> Robert Brown - 09:15 AM (expired)</li>
+                    </ul>
+                </div>
+
+                <div class="card" id="searchResultsCard" style="display: none;">
+                    <div class="card-title">Search Results</div>
+                    <div style="overflow-x: auto;">
+                        <table id="searchResultsTable">
+                            <thead><tr><th>Name</th><th>Unique ID</th><th>Company</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card" id="visitorDetailCard" style="display: none;">
+                    <div class="card-header">
+                        <div class="card-title">Visitor Details</div>
+                        <button id="closeDetailBtn" class="icon-btn"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div id="visitorDetailContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== System Administrator Panel ===================== -->
+    <div id="admin-panel" class="role-panel">
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <div class="card-title">Visitor Trends (Last 5 Days)</div>
+                    <div style="height: 200px; display: flex; align-items: flex-end; gap: 1rem; padding: 1rem 0;">
+                        <div style="flex:1; text-align:center;"><div style="height: 80px; background: #3b82f6; border-radius: 0.25rem;"></div><div>Mon</div></div>
+                        <div style="flex:1; text-align:center;"><div style="height: 120px; background: #3b82f6; border-radius: 0.25rem;"></div><div>Tue</div></div>
+                        <div style="flex:1; text-align:center;"><div style="height: 60px; background: #3b82f6; border-radius: 0.25rem;"></div><div>Wed</div></div>
+                        <div style="flex:1; text-align:center;"><div style="height: 150px; background: #3b82f6; border-radius: 0.25rem;"></div><div>Thu</div></div>
+                        <div style="flex:1; text-align:center;"><div style="height: 90px; background: #3b82f6; border-radius: 0.25rem;"></div><div>Fri</div></div>
+                    </div>
+                    <button><i class="fas fa-chart-line"></i> Export Report (CSV)</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">User Management</div>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+                            <tbody>
+                                <tr><td>Alice Admin</td><td>admin@example.com</td><td>Administrator</td><td><button class="secondary">Edit</button></td></tr>
+                                <tr><td>Bob Reception</td><td>reception@example.com</td><td>Receptionist</td><td><button class="secondary">Edit</button></td></tr>
+                                <tr><td>Charlie Security</td><td>security@example.com</td><td>Security Officer</td><td><button class="secondary">Edit</button></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button style="margin-top: 1rem;" id="showAddUserFormBtn"><i class="fas fa-user-plus"></i> Add New User</button>
+                    <div id="addUserForm" style="margin-top: 1rem; display: none;">
+                        <div class="form-group"><input type="text" placeholder="Full Name"></div>
+                        <div class="form-group"><input type="email" placeholder="Email"></div>
+                        <div class="form-group"><input type="password" placeholder="Password"></div>
+                        <div class="form-group"><select><option>Receptionist</option><option>Security Officer</option><option>Administrator</option></select></div>
+                        <button>Create User</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-title">System Configuration</div>
+                    <div class="form-group">
+                        <label>Default Gate Pass Duration (hours)</label>
+                        <input type="number" id="defaultDuration" value="4" min="1" max="24">
+                        <p class="tooltip" style="font-size: 0.75rem; color: #64748b;">This will be the default value for new visitor registrations</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Allowed Durations (hours, comma separated)</label>
+                        <input type="text" id="allowedDurations" value="1,2,4,8">
+                    </div>
+                    <div class="form-group">
+                        <label>Notification Email</label>
+                        <input type="email" id="notificationEmail" value="security@company.com">
+                    </div>
+                    <button id="saveConfigBtn">Save Configuration</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Reports & Audit</div>
+                    <div class="form-group"><label>Date Range</label><input type="date"> to <input type="date"></div>
+                    <div class="form-group"><label>Status Filter</label><select><option>All</option><option>Pending</option><option>Checked‑In</option><option>Checked‑Out</option></select></div>
+                    <button>Generate Report</button>
+                    <button class="secondary" style="margin-left: 0.5rem;"><i class="fas fa-file-csv"></i> Export CSV</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODALS ===================== -->
+    <!-- Edit Visitor Modal -->
+    <div id="editVisitorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Edit Visitor (Permanent Info)</h3><button class="closeModal" style="background:none;">&times;</button></div>
+            <form id="editVisitorForm">
+                <div class="form-group"><label>Name</label><input id="editName"></div>
+                <div class="form-group"><label>Company</label><input id="editCompany"></div>
+                <div class="form-group"><label>Contact Number</label><input id="editPhone"></div>
+                <div class="form-group"><label>Email</label><input id="editEmail"></div>
+                <div class="form-group"><label>General Notes</label><textarea id="editNotes"></textarea></div>
+                <button type="submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add New Visit Modal -->
+    <div id="addVisitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Add New Visit</h3><button class="closeModal" style="background:none;">&times;</button></div>
+            <form id="addVisitForm">
+                <div class="form-group"><label>Reason for Visit</label><select id="visitReason"><option>Business Meeting</option><option>Client Visit</option><option>Interview</option></select></div>
+                <div class="form-group"><label>Visit Notes</label><textarea id="visitNotes"></textarea></div>
+                <div class="form-group"><label>Gate Pass Duration</label><select id="visitDuration"><option>1 hour</option><option>2 hours</option><option>4 hours</option></select></div>
+                <button type="submit">Create Visit</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Gate Pass Modal -->
+    <div id="gatePassModal" class="modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Gate Pass</h3>
+                <button id="closeGatePassModal" class="icon-btn" style="background:none;"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="gatePassContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Role switching
+        const tabs = document.querySelectorAll('.role-tab');
+        const panels = document.querySelectorAll('.role-panel');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const role = tab.dataset.role;
+                panels.forEach(p => p.classList.remove('active'));
+                document.getElementById(`${role}-panel`).classList.add('active');
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+            });
+        });
+
+        // Receptionist: show/hide registration form
+        const showRegisterBtn = document.getElementById('showRegisterFormBtn');
+        const registerFormCard = document.getElementById('registerFormCard');
+        const closeRegisterForm = document.getElementById('closeRegisterForm');
+        showRegisterBtn.addEventListener('click', () => { registerFormCard.style.display = 'block'; });
+        closeRegisterForm.addEventListener('click', () => { registerFormCard.style.display = 'none'; });
+
+        // Simulate registration with duration from dropdown
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const duration = document.getElementById('regDuration').value;
+            const uniqueId = 'V' + new Date().toISOString().slice(0,10).replace(/-/g,'') + Math.floor(Math.random()*1000).toString().padStart(4,'0');
+            document.getElementById('generatedUniqueId').innerHTML = `✓ Visitor registered! Unique ID: ${uniqueId} (Gate pass duration: ${duration})`;
+            document.getElementById('generatedUniqueId').style.display = 'block';
+            setTimeout(() => document.getElementById('generatedUniqueId').style.display = 'none', 4000);
+            registerFormCard.style.display = 'none';
+        });
+
+        // Edit visitor modal
+        const editModal = document.getElementById('editVisitorModal');
+        const editBtns = document.querySelectorAll('.editVisitorBtn');
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                editModal.style.display = 'flex';
+                document.getElementById('editName').value = 'John Smith';
+                document.getElementById('editCompany').value = 'Acme Inc';
+                document.getElementById('editPhone').value = '+1234567890';
+                document.getElementById('editEmail').value = 'john@example.com';
+                document.getElementById('editNotes').value = 'VIP client';
+            });
+        });
+
+        // Add new visit modal
+        const addVisitModal = document.getElementById('addVisitModal');
+        const addVisitBtns = document.querySelectorAll('.addVisitBtn');
+        addVisitBtns.forEach(btn => {
+            btn.addEventListener('click', () => { addVisitModal.style.display = 'flex'; });
+        });
+
+        // Close modals
+        document.querySelectorAll('.closeModal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                editModal.style.display = 'none';
+                addVisitModal.style.display = 'none';
+                document.getElementById('gatePassModal').style.display = 'none';
+            });
+        });
+        window.onclick = function(event) {
+            if (event.target == editModal) editModal.style.display = 'none';
+            if (event.target == addVisitModal) addVisitModal.style.display = 'none';
+            if (event.target == document.getElementById('gatePassModal')) document.getElementById('gatePassModal').style.display = 'none';
+        };
+
+        // Gate pass generation function
+        function showGatePass(visitor) {
+            const now = new Date();
+            const entryTime = visitor.entryTime ? new Date(visitor.entryTime) : now;
+            const duration = visitor.duration || 4;
+            const expiry = new Date(entryTime.getTime() + duration * 60 * 60 * 1000);
+            const isActive = visitor.status === 'Checked‑In' && expiry > now;
+            const statusClass = isActive ? 'active' : 'expired';
+            const statusText = isActive ? `✅ ACTIVE – Valid until ${expiry.toLocaleTimeString()}` : '❌ EXPIRED – This pass is no longer valid';
+
+            const gatePassHTML = `
+                <div class="gate-pass">
+                    <div class="header">
+                        <h2>VISITOR GATE PASS</h2>
+                        <p>Valid only on the date and time specified</p>
+                    </div>
+                    <div class="visitor-id">
+                        <span>${visitor.uniqueId}</span>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Visitor Name:</div>
+                        <div class="detail-value">${visitor.name}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Company:</div>
+                        <div class="detail-value">${visitor.company}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Reason for Visit:</div>
+                        <div class="detail-value">${visitor.reason}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Check‑in Time:</div>
+                        <div class="detail-value">${entryTime.toLocaleString()}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Gate Pass Duration:</div>
+                        <div class="detail-value">${duration} hours</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Expiry Time:</div>
+                        <div class="detail-value">${expiry.toLocaleString()}</div>
+                    </div>
+                    <div class="status ${statusClass}">
+                        ${statusText}
+                    </div>
+                    <div class="qr-code">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${visitor.uniqueId}" alt="QR Code">
+                    </div>
+                    <div class="footer">
+                        This pass is non‑transferable. Must be surrendered at exit.<br>
+                        For assistance, contact Security: +1 234 567 890
+                    </div>
+                    <button class="print-btn no-print" onclick="window.print();">🖨️ Print Gate Pass</button>
+                </div>
+            `;
+            document.getElementById('gatePassContent').innerHTML = gatePassHTML;
+            document.getElementById('gatePassModal').style.display = 'flex';
+        }
+
+        // Security Officer: search & display details
+        const searchBtn = document.getElementById('searchBtn');
+        const searchResultsCard = document.getElementById('searchResultsCard');
+        const visitorDetailCard = document.getElementById('visitorDetailCard');
+        const searchInput = document.getElementById('securitySearch');
+        const premisesCountSpan = document.getElementById('premisesCount');
+
+        searchBtn.addEventListener('click', () => {
+            const term = searchInput.value.toLowerCase();
+            const visitors = [
+                { name: 'John Smith', uniqueId: 'V202503250001', company: 'Acme Inc', status: 'Pending', reason: 'Business Meeting', duration: 4, entryTime: null },
+                { name: 'Emma Watson', uniqueId: 'V202503250002', company: 'Tech Corp', status: 'Checked‑In', reason: 'Client Visit', duration: 2, entryTime: new Date() }
+            ];
+            const filtered = visitors.filter(v => v.name.toLowerCase().includes(term) || v.uniqueId.toLowerCase().includes(term));
+            const tbody = document.querySelector('#searchResultsTable tbody');
+            tbody.innerHTML = '';
+            filtered.forEach(v => {
+                const statusClass = v.status === 'Pending' ? 'badge-pending' : (v.status === 'Checked‑In' ? 'badge-checked-in' : 'badge-expired');
+                const row = `<tr><td>${v.name}</td><td>${v.uniqueId}</td><td>${v.company}</td><td><span class="badge ${statusClass}">${v.status}</span></td><td><button class="viewDetailBtn" data-id="${v.uniqueId}">View & Print</button></td></tr>`;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+            searchResultsCard.style.display = 'block';
+            visitorDetailCard.style.display = 'none';
+
+            document.querySelectorAll('.viewDetailBtn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = btn.dataset.id;
+                    const visitor = visitors.find(v => v.uniqueId === id);
+                    if (!visitor) return;
+                    visitorDetailCard.style.display = 'block';
+                    const detailContent = `
+                        <h3>${visitor.name}</h3>
+                        <p><strong>Unique ID:</strong> ${visitor.uniqueId}</p>
+                        <p><strong>Company:</strong> ${visitor.company}</p>
+                        <p><strong>Status:</strong> <span class="badge badge-${visitor.status.toLowerCase().replace(/[^a-z]/g,'')}">${visitor.status}</span></p>
+                        <p><strong>Gate Pass Duration:</strong> ${visitor.duration} hours (set at registration)</p>
+                        <div style="margin: 1rem 0;">
+                            <button id="checkinBtn">Check‑In</button>
+                            <button id="checkoutBtn">Check‑Out</button>
+                        </div>
+                        <div><strong>Gate Pass</strong> <button id="printGatePassBtn">Print Gate Pass</button> <span id="timer">(Remaining: ${visitor.status === 'Checked‑In' ? '3h 45m' : 'Not checked in'})</span></div>
+                        <div><strong>Email Notification:</strong> <button id="sendEmailBtn">Send Now</button></div>
+                        <h4>Visit History</h4>
+                        <ul><li>2025-03-25: Business Meeting (4h) - Checked‑In at 10:30</li><li>2025-03-20: Client Visit (2h) - Completed</li></ul>
+                    `;
+                    document.getElementById('visitorDetailContent').innerHTML = detailContent;
+                    document.getElementById('checkinBtn')?.addEventListener('click', () => {
+                        alert('Visitor checked in. Entry time recorded. Email notification sent.');
+                        premisesCountSpan.textContent = (parseInt(premisesCountSpan.textContent) + 1).toString();
+                    });
+                    document.getElementById('checkoutBtn')?.addEventListener('click', () => alert('Visitor checked out. Exit time recorded.'));
+                    document.getElementById('printGatePassBtn')?.addEventListener('click', () => {
+                        // Build visitor object for gate pass
+                        const gatePassVisitor = {
+                            name: visitor.name,
+                            uniqueId: visitor.uniqueId,
+                            company: visitor.company,
+                            reason: visitor.reason,
+                            duration: visitor.duration,
+                            entryTime: visitor.entryTime,
+                            status: visitor.status
+                        };
+                        showGatePass(gatePassVisitor);
+                    });
+                    document.getElementById('sendEmailBtn')?.addEventListener('click', () => alert('Email notification sent.'));
+                });
+            });
+        });
+
+        // Admin: show add user form
+        const showAddUserBtn = document.getElementById('showAddUserFormBtn');
+        const addUserForm = document.getElementById('addUserForm');
+        showAddUserBtn.addEventListener('click', () => {
+            addUserForm.style.display = addUserForm.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Simulate saving configuration (just alert)
+        document.getElementById('saveConfigBtn')?.addEventListener('click', () => {
+            const defaultDur = document.getElementById('defaultDuration').value;
+            const allowed = document.getElementById('allowedDurations').value;
+            alert(`Configuration saved:\nDefault Duration: ${defaultDur} hours\nAllowed: ${allowed}`);
+        });
+
+        // Close gate pass modal
+        document.getElementById('closeGatePassModal').addEventListener('click', () => {
+            document.getElementById('gatePassModal').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
