@@ -1,3 +1,9 @@
+
+# Project Structure
+
+Below is the directory layout of the Visitor Management System Spring Boot application, along with a brief description of each component.
+
+```
 src/main/java/com/example/visitormanagement/
 │
 ├── VisitorManagementApplication.java          # Main Spring Boot entry point
@@ -86,3 +92,23 @@ src/main/java/com/example/visitormanagement/
 └── validator/                                  # Custom validation annotations (optional)
     ├── PhoneNumber.java
     └── PhoneNumberValidator.java
+```
+
+## Package Overview
+
+| Package          | Purpose |
+|------------------|---------|
+| **`config`**     | Spring configuration classes: security, JWT filter, CORS, and OpenAPI (Swagger) docs. |
+| **`controller`** | REST endpoints handling HTTP requests. |
+| **`service`**    | Core business logic, transactional operations, and external integrations (email). |
+| **`repository`** | Spring Data JPA repositories for database access. |
+| **`entity`**     | JPA entities mapping to database tables. |
+| **`dto`**        | Data Transfer Objects for request validation and response serialization. |
+| **`enums`**      | Enumerations for role names, visitor statuses, and gate pass templates. |
+| **`exception`**  | Custom exception classes and a global exception handler (`@ControllerAdvice`). |
+| **`security`**   | JWT token generation/validation and security utilities. |
+| **`util`**       | Helper classes for ID generation, date/time formatting, CSV export, and validation. |
+| **`validator`**  | Custom validation annotations (e.g., phone number validator). |
+
+
+```
