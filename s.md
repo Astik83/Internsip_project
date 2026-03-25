@@ -1,10 +1,11 @@
 
 
-# Visitor Management & Gate Pass Automation – Technical Specification (Updated)
+# Visitor Management & Gate Pass Automation – Final Technical Specification
 
 ## 1. Core Entities, Attributes, and Relationships
 
-The data model is built around five main entities (Role, User, Visitor, VisitRecord, SystemConfig). The key change is that `reasonForVisit` and visit‑specific notes now reside in `VisitRecord`.
+The data model consists of five main entities: **Role**, **User**, **Visitor**, **VisitRecord**, and **SystemConfig**.  
+The key design decision is that every **visit** (check‑in) has its own `reasonForVisit` and `visitNotes`, allowing a single visitor to have multiple visits with different purposes.
 
 ### 1.1 Role
 | Attribute       | Type     | Description                              |
@@ -81,6 +82,8 @@ Role ────< User ────< Visitor ────< VisitRecord
 
 ## 2. User Interface by Role
 
+The UI is role‑based, showing only relevant features for each user type.
+
 ### 2.1 Receptionist UI
 - **Dashboard:**  
   - Prominent “Quick Register New Visitor” button.  
@@ -130,12 +133,33 @@ Role ────< User ────< Visitor ────< VisitRecord
 
 ---
 
-## 3. API Endpoints with Request/Response Examples
+## 3. Gate Pass Content & Design
 
-All endpoints are prefixed with `/api/v1/`. Authentication via JWT.
+When the **Print Gate Pass** button is clicked, the system generates a professional, print‑friendly document containing the following information:
 
-### 3.1 Authentication & User Management
-*(unchanged)*
+| Field               | Description                                                                 | Example                     |
+|---------------------|-----------------------------------------------------------------------------|-----------------------------|
+| **Visitor Name**    | Full name of the visitor                                                    | John Smith                  |
+| **Unique ID**       | Auto‑generated alphanumeric ID (displayed prominently)                      | V202503250001               |
+| **Company**         | Visitor’s company name                                                      | Acme Inc.                   |
+| **Reason for Visit**| Purpose of the visit (from the visit record)                                | Business Meeting            |
+| **Date & Time**     | Check‑in date and time (entry time)                                         | 25 Mar 2025, 10:30 AM       |
+| **Duration**        | Allotted gate pass duration (set by receptionist)                           | 4 hours                     |
+| **Expiry Time**     | Calculated as entry time + duration                                         | 25 Mar 2025, 2:30 PM        |
+| **Status**          | “Active” or “Expired” (visual indicator)                                    | Active (green badge)        |
+| **Host/Contact**    | (Optional) Name of the person the visitor is meeting, or department         | Mr. Robert (Sales)          |
+| **QR Code / Barcode**| For quick scanning at security gates (enhances automation)                 | [QR code image]             |
+
+The printed pass includes a **countdown timer** on the digital version (optional) and clearly indicates the expiry time. The QR code encodes the visitor’s `uniqueId` or a URL that can be scanned for quick lookup.
+
+---
+
+## 4. API Endpoints with Request/Response Examples
+
+All endpoints are prefixed with `/api/v1/`. Authentication is performed via JWT (in `Authorization` header).  
+`{visitorId}` refers to the internal primary key; `uniqueId` is the auto‑generated alphanumeric identifier displayed on gate passes. `{recordId}` is the primary key of `VisitRecord`.
+
+### 4.1 Authentication & User Management
 
 | Method | Endpoint | Description | Request Body (JSON) | Response (JSON) |
 |--------|----------|-------------|---------------------|-----------------|
@@ -145,7 +169,7 @@ All endpoints are prefixed with `/api/v1/`. Authentication via JWT.
 | `PUT` | `/users/{userId}` | (Admin) Update user | `{ "name": "string (opt)", "email": "string (opt)", "roleId": integer (opt) }` | Updated user object |
 | `GET` | `/roles` | (Admin) Get all roles | — | `{ "roles": [ { "roleId": 1, "roleName": "Receptionist", "description": "..." } ] }` |
 
-### 3.2 Visitor Management
+### 4.2 Visitor Management
 
 | Method | Endpoint | Description | Request Body (JSON) | Response (JSON) |
 |--------|----------|-------------|---------------------|-----------------|
@@ -157,7 +181,7 @@ All endpoints are prefixed with `/api/v1/`. Authentication via JWT.
 | `PUT` | `/visitors/{visitorId}` | Update **permanent visitor info** (US 13) – not visit‑specific. | `{ "name": "string (opt)", "company": "string (opt)", "contactNumber": "string (opt)", "email": "string (opt)", "notes": "string (opt)" }` | Updated visitor object. |
 | `PUT` | `/visitors/{visitorId}/visits/{recordId}` | Update a specific visit (e.g., reason, notes) – optional. | `{ "reasonForVisit": "string (opt)", "visitNotes": "string (opt)", "gatePassDuration": integer (opt) }` | Updated `VisitRecord` object. |
 
-### 3.3 Visit & Gate Pass Management
+### 4.3 Visit & Gate Pass Management
 
 | Method | Endpoint | Description | Request Body (JSON) | Response (JSON) |
 |--------|----------|-------------|---------------------|-----------------|
@@ -166,8 +190,7 @@ All endpoints are prefixed with `/api/v1/`. Authentication via JWT.
 | `POST` | `/visitors/{visitorId}/visits/{recordId}/gate-pass` | Generate / regenerate gate pass for a specific visit (US 05, US 10). | `{ "duration": integer (opt, hours), "template": "string (opt)" }` | `{ "gatePassData": { "visitorName": "...", "visitorId": "...", "company": "...", "reason": "...", "dateTime": "...", "expiryTime": "...", "status": "Active" } }` |
 | `GET` | `/visitors/{visitorId}/visits/{recordId}/gate-pass` | Get latest gate pass for a specific visit (includes expiry status, US 11). | — | Same as above; `status` may be `"Expired"` if expiry time passed. |
 
-### 3.4 Reporting & Configuration
-*(unchanged except that reports now include visit‑level data)*
+### 4.4 Reporting & Configuration
 
 | Method | Endpoint | Description | Request Body (JSON) | Response (JSON) |
 |--------|----------|-------------|---------------------|-----------------|
@@ -178,7 +201,7 @@ All endpoints are prefixed with `/api/v1/`. Authentication via JWT.
 
 ---
 
-## 4. Data Type Notes
+## 5. Data Type Notes
 - **Timestamps:** ISO 8601 format (e.g., `"2025-03-25T14:30:00Z"`).  
 - **IDs:** `visitorId`, `userId`, `recordId` are integers (or UUIDs).  
 - **UniqueID:** Alphanumeric, e.g., `"V202503250001"`.  
@@ -187,3 +210,23 @@ All endpoints are prefixed with `/api/v1/`. Authentication via JWT.
 
 ---
 
+## 6. Validation & Exception Messages (Key‑Value Pairs)
+
+| Error Key              | Message                                                                 |
+|------------------------|-------------------------------------------------------------------------|
+| `MISSING_FIELD`        | "The field '{field}' is required."                                       |
+| `INVALID_EMAIL`        | "Please provide a valid email address."                                  |
+| `INVALID_PHONE`        | "Phone number must contain at least 10 digits."                          |
+| `INVALID_DURATION`     | "Gate pass duration must be one of the allowed values: {allowedList}."   |
+| `DUPLICATE_UNIQUE_ID`  | "System error: could not generate a unique ID. Please try again."        |
+| `ROLE_NOT_FOUND`       | "Role with ID {roleId} does not exist."                                  |
+| `UNAUTHORIZED`         | "You do not have permission to perform this action."                     |
+| `VISITOR_NOT_FOUND`    | "Visitor with ID {visitorId} does not exist."                            |
+| `ALREADY_CHECKED_IN`   | "Visitor is already checked in."                                         |
+| `NOT_CHECKED_IN`       | "Visitor is not currently checked in."                                   |
+| `EMAIL_FAILED`         | "Email notification could not be sent. Please check email configuration."|
+| `INVALID_DATE_RANGE`   | "End date must be after start date."                                     |
+
+---
+
+This specification provides a complete foundation for development, aligning the data model, UI, API contracts, gate pass design, and error handling with the original requirements.
