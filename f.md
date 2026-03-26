@@ -1,114 +1,230 @@
+# project structure
 
-# Project Structure
-
-Below is the directory layout of the Visitor Management System Spring Boot application, along with a brief description of each component.
-
-```
-src/main/java/com/example/visitormanagement/
+```text
+com.vms
 │
-├── VisitorManagementApplication.java          # Main Spring Boot entry point
+├── controller
+│   ├── AuthController.java
+│   ├── UserController.java
+│   ├── RoleController.java
+│   ├── VisitorController.java
+│   ├── VisitController.java
+│   ├── ReportController.java
+│   └── ConfigController.java
 │
-├── config/                                     # Configuration classes
-│   ├── SecurityConfig.java                     # Spring Security + JWT setup
-│   ├── JwtAuthenticationFilter.java            # JWT request filter
-│   ├── WebConfig.java                          # CORS, MVC configuration
-│   └── SwaggerConfig.java                      # API documentation (OpenAPI)
+├── service
+│   ├── AuthService.java
+│   ├── UserService.java
+│   ├── RoleService.java
+│   ├── VisitorService.java
+│   ├── VisitService.java
+│   ├── ReportService.java
+│   └── ConfigService.java
 │
-├── controller/                                 # REST API endpoints
-│   ├── AuthController.java                     # /auth/login, /auth/refresh
-│   ├── UserController.java                     # /users (admin only)
-│   ├── VisitorController.java                  # /visitors
-│   ├── VisitController.java                    # /visitors/{id}/visits
-│   ├── GatePassController.java                 # /visitors/{id}/visits/{rid}/gate-pass
-│   ├── ReportController.java                   # /reports
-│   └── ConfigController.java                   # /config
+├── service/impl
+│   ├── AuthServiceImpl.java
+│   ├── UserServiceImpl.java
+│   ├── RoleServiceImpl.java
+│   ├── VisitorServiceImpl.java
+│   ├── VisitServiceImpl.java
+│   ├── ReportServiceImpl.java
+│   └── ConfigServiceImpl.java
 │
-├── service/                                    # Business logic
-│   ├── AuthService.java                        # Authentication logic
-│   ├── UserService.java                        # User management
-│   ├── VisitorService.java                     # Visitor operations
-│   ├── VisitService.java                       # Visit record operations
-│   ├── GatePassService.java                    # Gate pass generation
-│   ├── ReportService.java                      # Reporting & export
-│   └── EmailService.java                       # Email notifications
-│
-├── repository/                                 # Spring Data JPA repositories
-│   ├── RoleRepository.java
+├── repository
 │   ├── UserRepository.java
+│   ├── RoleRepository.java
 │   ├── VisitorRepository.java
-│   ├── VisitRecordRepository.java
-│   └── SystemConfigRepository.java
+│   └── VisitRecordRepository.java
 │
-├── entity/                                     # JPA entities (domain objects)
-│   ├── Role.java
+├── entity
 │   ├── User.java
+│   ├── Role.java
 │   ├── Visitor.java
-│   ├── VisitRecord.java
-│   └── SystemConfig.java
+│   └── VisitRecord.java
 │
-├── dto/                                        # Data Transfer Objects
-│   ├── request/                                # Incoming payloads
+├── dto
+│   ├── auth
 │   │   ├── LoginRequest.java
-│   │   ├── UserCreateRequest.java
-│   │   ├── UserUpdateRequest.java
-│   │   ├── VisitorCreateRequest.java          # includes reason, duration
-│   │   ├── VisitorUpdateRequest.java
-│   │   ├── VisitCreateRequest.java
-│   │   ├── VisitUpdateRequest.java
-│   │   ├── CheckinRequest.java
-│   │   └── ConfigUpdateRequest.java
-│   └── response/                               # Outgoing payloads
-│       ├── LoginResponse.java
-│       ├── UserResponse.java
-│       ├── VisitorResponse.java
-│       ├── VisitRecordResponse.java
-│       ├── GatePassResponse.java
-│       ├── ReportDataResponse.java
-│       └── ConfigResponse.java
+│   │   └── LoginResponse.java
+│   │
+│   ├── user
+│   │   └── UserDTO.java
+│   │
+│   ├── role
+│   │   └── RoleDTO.java
+│   │
+│   ├── visitor
+│   │   ├── VisitorRequestDto.java
+│   │   ├── VisitorResponseDto.java
+│   │   └── VisitorWithVisitRequestDto.java
+│   │
+│   ├── visit
+│   │   ├── VisitRequestDto.java
+│   │   └── VisitResponseDto.java
 │
-├── enums/                                      # Enumerations
-│   ├── RoleName.java
+├── enums
 │   ├── VisitorStatus.java
-│   └── GatePassTemplate.java
-│
-├── exception/                                  # Custom exceptions & global handler
-│   ├── BusinessException.java                  # Base custom exception
-│   ├── ResourceNotFoundException.java
-│   ├── UnauthorizedException.java
-│   ├── InvalidRequestException.java
-│   └── GlobalExceptionHandler.java             # @ControllerAdvice
-│
-├── security/                                   # Security utilities
-│   ├── JwtTokenProvider.java                   # JWT generation/validation
-│   └── SecurityUtils.java                      # Helper methods (get current user)
-│
-├── util/                                       # Utility classes
-│   ├── UniqueIdGenerator.java                  # Generate visitor uniqueId
-│   ├── DateTimeUtils.java                      # Timestamp formatting
-│   ├── CsvExportUtil.java                      # CSV generation logic
-│   ├── ValidationUtils.java                    # Custom validators (phone, email)
-│   └── Constants.java                          # Application constants
-│
-└── validator/                                  # Custom validation annotations (optional)
-    ├── PhoneNumber.java
-    └── PhoneNumberValidator.java
+│   └── RoleType.java (optional)
 ```
 
-## Package Overview
+---
 
-| Package          | Purpose |
-|------------------|---------|
-| **`config`**     | Spring configuration classes: security, JWT filter, CORS, and OpenAPI (Swagger) docs. |
-| **`controller`** | REST endpoints handling HTTP requests. |
-| **`service`**    | Core business logic, transactional operations, and external integrations (email). |
-| **`repository`** | Spring Data JPA repositories for database access. |
-| **`entity`**     | JPA entities mapping to database tables. |
-| **`dto`**        | Data Transfer Objects for request validation and response serialization. |
-| **`enums`**      | Enumerations for role names, visitor statuses, and gate pass templates. |
-| **`exception`**  | Custom exception classes and a global exception handler (`@ControllerAdvice`). |
-| **`security`**   | JWT token generation/validation and security utilities. |
-| **`util`**       | Helper classes for ID generation, date/time formatting, CSV export, and validation. |
-| **`validator`**  | Custom validation annotations (e.g., phone number validator). |
+# 🧠 LAYER RESPONSIBILITY (VERY IMPORTANT)
 
+| Layer          | Responsibility       |
+| -------------- | -------------------- |
+| **Entity**     | Database tables      |
+| **DTO**        | API request/response |
+| **Repository** | DB operations        |
+| **Service**    | Business logic       |
+| **Controller** | API endpoints        |
 
-```
+---
+
+# 🎯 CONTROLLER ↔ SERVICE ↔ API MAPPING
+
+---
+
+## 🔐 1. AUTH MODULE
+
+| API                | Controller     | Service     |
+| ------------------ | -------------- | ----------- |
+| POST `/auth/login` | AuthController | AuthService |
+
+👉 Responsibility:
+
+* Authenticate user
+* Generate JWT
+
+---
+
+## 👥 2. USER MODULE
+
+| API                   | Controller     | Service     |
+| --------------------- | -------------- | ----------- |
+| GET `/users`          | UserController | UserService |
+| POST `/users`         | UserController | UserService |
+| PUT `/users/{userId}` | UserController | UserService |
+
+👉 Responsibility:
+
+* Create user
+* Update user
+* Fetch users
+
+---
+
+## 🏷️ 3. ROLE MODULE
+
+| API          | Controller     | Service     |
+| ------------ | -------------- | ----------- |
+| GET `/roles` | RoleController | RoleService |
+
+👉 Responsibility:
+
+* Fetch roles
+
+---
+
+## 👤 4. VISITOR MODULE (Permanent Data)
+
+👉 Handles **visitor profile (WHO)**
+
+| API                         | Controller        | Service        |
+| --------------------------- | ----------------- | -------------- |
+| POST `/visitors`            | VisitorController | VisitorService |
+| GET `/visitors`             | VisitorController | VisitorService |
+| GET `/visitors/search`      | VisitorController | VisitorService |
+| GET `/visitors/{visitorId}` | VisitorController | VisitorService |
+| PUT `/visitors/{visitorId}` | VisitorController | VisitorService |
+
+👉 Responsibility:
+
+* Register visitor (with first visit)
+* Update visitor info
+* Search & list visitors
+* Get visitor details
+
+---
+
+## 🧾 5. VISIT MODULE (Visit Actions)
+
+👉 Handles **visit activity (WHAT happened)**
+
+| API                                               | Controller      | Service      |
+| ------------------------------------------------- | --------------- | ------------ |
+| POST `/visitors/{id}/visits`                      | VisitController | VisitService |
+| PUT `/visitors/{id}/visits/{recordId}`            | VisitController | VisitService |
+| POST `/visitors/{id}/visits/{recordId}/checkin`   | VisitController | VisitService |
+| PUT `/visitors/{id}/visits/{recordId}/checkout`   | VisitController | VisitService |
+| POST `/visitors/{id}/visits/{recordId}/gate-pass` | VisitController | VisitService |
+| GET `/visitors/{id}/visits/{recordId}/gate-pass`  | VisitController | VisitService |
+
+👉 Responsibility:
+
+* Add visit
+* Update visit
+* Check-in / Check-out
+* Gate pass generation
+
+---
+
+## 📊 6. REPORT MODULE
+
+| API                            | Controller       | Service       |
+| ------------------------------ | ---------------- | ------------- |
+| GET `/reports/visitors`        | ReportController | ReportService |
+| GET `/reports/visitors/export` | ReportController | ReportService |
+
+👉 Responsibility:
+
+* Visitor analytics
+* Export data
+
+---
+
+## ⚙️ 7. CONFIG MODULE
+
+| API           | Controller       | Service       |
+| ------------- | ---------------- | ------------- |
+| GET `/config` | ConfigController | ConfigService |
+| PUT `/config` | ConfigController | ConfigService |
+
+👉 Responsibility:
+
+* System configuration
+
+---
+
+# 🔥 GOLDEN RULE (REMEMBER ALWAYS)
+
+👉 **Visitor = WHO (profile data)**  
+👉 **Visit = WHAT (activity/event)**
+
+---
+
+## ✔ Use VisitorService when:
+
+* Name, email, company, notes
+* Listing / searching visitors
+
+---
+
+## ✔ Use VisitService when:
+
+* Check-in / Check-out
+* Gate pass
+* Visit history
+
+---
+
+# 🧠 FINAL MEMORY SHORTCUT
+
+| Question                    | Go To          |
+| --------------------------- | -------------- |
+| Is it about person?         | VisitorService |
+| Is it about visit activity? | VisitService   |
+| Is it about system user?    | UserService    |
+| Is it about login?          | AuthService    |
+
+---
