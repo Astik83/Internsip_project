@@ -1,7 +1,61 @@
+## 1. Role Entity
+
+```java
+@Entity
+@Table(name = "roles")
+public class Role {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer roleId;
+
+    @Column(nullable = false, unique = true)
+    private String roleName;
+
+    private String description;
+
+    // Optional (if you want JSON permissions later)
+    // @Column(columnDefinition = "JSON")
+    // private String permissions;
+
+    // One Role → Many Users (optional mapping)
+    @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
+    private List<User> users = new ArrayList<>();
+
+    // getters & setters
+}
+```
+
+## 2. User Entity
+
+```java
+@Entity
+@Table(name = "roles")
+public class Role {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer roleId;
+
+    @Column(nullable = false, unique = true)
+    private String roleName;
+
+    private String description;
+
+    // Optional (if you want JSON permissions later)
+    // @Column(columnDefinition = "JSON")
+    // private String permissions;
+
+    // One Role → Many Users (optional mapping)
+    @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
+    private List<User> users = new ArrayList<>();
+
+    // getters & setters
+}
+```
 
 
-
-## 📦 1. Visitor Entity
+## 📦 3. Visitor Entity
 
 ```java
 @Entity
@@ -34,7 +88,9 @@ public class Visitor {
 
     private LocalDateTime createdAt;
 
-    private Integer createdBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "created_by", nullable = false)
+private User createdBy;
 
     // One Visitor → Many VisitRecords
     @OneToMany(mappedBy = "visitor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -46,7 +102,7 @@ public class Visitor {
 
 ---
 
-## 📦 2. VisitRecord Entity
+## 📦 4. VisitRecord Entity
 
 ```java
 @Entity
@@ -77,7 +133,8 @@ public class VisitRecord {
 
     private LocalDateTime gatePassExpiryTime;
 
-    private String statusAtTime;
+    @Enumerated(EnumType.STRING)
+private VisitorStatus statusAtTime;
 
     // getters & setters
 }
