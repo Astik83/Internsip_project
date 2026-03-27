@@ -30,11 +30,6 @@ public class Role {
 ## 2. User Entity
 
 ```java
-package com.vms.entity;
-
-import jakarta.persistence.*;
-import lombok.*;
-
 @Entity
 @Table(name = "users")
 public class User {
@@ -43,19 +38,25 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer userId;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String name;
 
     @Column(nullable = false, unique = true)
     private String email;
 
-    // 🔐 Stored as hashed password in DB
-    @Column(name = "password_hash", nullable = false)
+    @Column(nullable = false)
     private String passwordHash;
 
+    // Many Users → One Role
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime lastLogin;
+
+    // getters & setters
 }
 ```
 
